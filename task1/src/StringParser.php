@@ -22,10 +22,9 @@ final class StringParser
             preg_match('/\[\/(.*?)\]/m', $match, $endingTagNameMatch);
             $endingTagName = $endingTagNameMatch[1];
     
-            if ($tagName === $endingTagName) {
-                $tag = array();                                                                                                                                              
-                $tag[$tagName] = array('description' => $description, 'data' => $data);
-                array_push($result, $tag);
+            if ($tagName === $endingTagName) {                                                                                                                        
+                $tag = array('description' => $description, 'data' => $data);
+                $result[$tagName] = $tag;
             }        
         }
     

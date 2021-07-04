@@ -56,6 +56,8 @@ class User
         }
 
         $mysqli -> close();
+
+        return json_encode($result);
     }
 }
 

@@ -17,12 +17,15 @@ class User
     }
 
     private function login($username, $password) {
-        $query = 'SELECT * from users WHERE username = "' . $username . '" order by id asc limit 1';
-        $result = $this -> mysqli -> query($query);
+        // Use prepared statement to prevent SQL injection
+        $query = 'SELECT * from users WHERE username = ? order by id asc limit 1';
+        $stmt = $this -> mysqli -> prepare($query);
+        $stmt -> bind_param('s', $username);
+        $stmt -> execute();
+        $result = $stmt -> get_result();
 
         if ($result -> num_rows > 0) {
             $user = $result -> fetch_array();
-
             if (password_verify($password, $user['password'])) {
                 $this -> data = array('username' => $username, 'counter' => $user['counter']);
             }
@@ -36,9 +39,13 @@ class User
     }
 
     private function createNewUser($username, $password) {
-        $query = 'INSERT INTO users (username, password) VALUES ("' . $username . '", "' . password_hash($password, PASSWORD_BCRYPT) . '")';
-        $result = $this -> mysqli -> query($query);
-        if (!$result) {
+        // Use prepared statement to prevent SQL injection
+        $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+        $query = 'INSERT INTO users (username, password) VALUES (?, ?)';
+        $stmt = $this -> mysqli -> prepare($query);
+        $stmt -> bind_param('ss', $username, $hashed_password);
+        $stmt -> execute();
+        if ($stmt -> errno) {
             echo $this -> mysqli -> error;
         }
         else { // attempt to login with newly created user again
@@ -47,17 +54,20 @@ class User
     }
 
     public static function setCounter($username, $counter) {
+        // Use prepared statement to prevent SQL injection
         $mysqli = new mysqli('localhost', 'root', '', 'mrpeasy');
-        $query = 'UPDATE users SET counter = '. $counter .' WHERE username = "' . $username . '"';
-        $result = $mysqli -> query($query);
+        $query = 'UPDATE users SET counter = ? WHERE username = ?';
+        $stmt = $mysqli -> prepare($query);
+        $stmt -> bind_param('is', $counter, $username);
+        $stmt -> execute();
 
-        if (!$result) {
+        if ($stmt -> errno) {
             echo $mysqli -> error;
         }
 
         $mysqli -> close();
 
-        return json_encode($result);
+        return json_encode(array('errors' => $stmt -> errno));
     }
 }
 
